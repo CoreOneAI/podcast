@@ -28,7 +28,7 @@ export function ResearchAssistant() {
 
     try {
       // TODO: call your /api endpoint that uses Genkit + Google models.
-      // For now we use a stub so you can feel the flow.
+      // For now we use a stub so the flow works end-to-end.
 
       setTitle('Ghosted After Three Great Dates');
       setDescription(
@@ -57,9 +57,7 @@ export function ResearchAssistant() {
     try {
       const supabase = createSupabaseBrowserClient();
 
-      const isoDate = scheduledAt
-        ? new Date(scheduledAt).toISOString()
-        : null;
+      const isoDate = scheduledAt ? new Date(scheduledAt).toISOString() : null;
 
       const { error } = await supabase.from('episodes').insert({
         title,
@@ -67,9 +65,7 @@ export function ResearchAssistant() {
         talking_points: questions,
         status, // 'pending' or 'booked'
         scheduled_recording_at: isoDate,
-        // OPTIONAL: wire these later if you want
-        // show_id,
-        // guest_id,
+        // TODO later: show_id, guest_id, etc.
       });
 
       if (error) {
@@ -79,14 +75,6 @@ export function ResearchAssistant() {
       }
 
       alert('Episode brief saved. It will now appear on your dashboard and calendar.');
-
-      // Optionally reset form (keep topic so you can tweak AI)
-      // setTopic('');
-      // setTitle('');
-      // setDescription('');
-      // setQuestions('');
-      // setScheduledAt('');
-      // setStatus('pending');
     } finally {
       setIsSaving(false);
     }
@@ -109,7 +97,11 @@ export function ResearchAssistant() {
             value={topic}
             onChange={e => setTopic(e.target.value)}
           />
-          <Button onClick={handleGenerate} disabled={!topic || isGenerating} size="sm">
+          <Button
+            onClick={handleGenerate}
+            disabled={!topic || isGenerating}
+            className="px-3 py-1 text-sm"
+          >
             {isGenerating ? 'Generating…' : 'Generate brief'}
           </Button>
         </TabsContent>
@@ -154,7 +146,7 @@ export function ResearchAssistant() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs text-slate-400">Recording date & time</label>
+          <label className="text-xs text-slate-400">Recording date &amp; time</label>
           <Input
             type="datetime-local"
             value={scheduledAt}
@@ -167,17 +159,21 @@ export function ResearchAssistant() {
           <div className="inline-flex gap-2 rounded-lg border border-white/10 bg-black/20 p-1">
             <Button
               type="button"
-              size="sm"
-              variant={status === 'pending' ? 'default' : 'outline'}
               onClick={() => setStatus('pending')}
+              className={
+                'px-3 py-1 text-xs rounded-md ' +
+                (status === 'pending' ? 'bg-white/10 text-white' : 'text-slate-400')
+              }
             >
               Pending
             </Button>
             <Button
               type="button"
-              size="sm"
-              variant={status === 'booked' ? 'default' : 'outline'}
               onClick={() => setStatus('booked')}
+              className={
+                'px-3 py-1 text-xs rounded-md ' +
+                (status === 'booked' ? 'bg-white/10 text-white' : 'text-slate-400')
+              }
             >
               Booked
             </Button>
@@ -186,7 +182,11 @@ export function ResearchAssistant() {
       </div>
 
       <div className="flex items-center justify-between pt-2">
-        <Button onClick={handleSave} disabled={isSaving || !title} size="sm">
+        <Button
+          onClick={handleSave}
+          disabled={isSaving || !title}
+          className="px-3 py-1 text-sm"
+        >
           {isSaving ? 'Saving…' : 'Save episode brief'}
         </Button>
 
