@@ -1,13 +1,16 @@
-// app/(app)/dashboard/page.tsx
-import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { createClient } from '@/utils/supabase/server';
 
 export default async function DashboardPage() {
-  const supabase = createSupabaseServerClient();
+  // Get a real Supabase client (not a Promise)
+  const supabase = await createClient();
 
+  // Fetch counts + episodes in parallel
   const [{ data: shows }, { data: episodes }, { data: guests }] =
     await Promise.all([
       supabase.from('shows').select('id'),
-      supabase.from('episodes').select('id, title, status, scheduled_recording_at'),
+      supabase
+        .from('episodes')
+        .select('id, title, status, scheduled_recording_at'),
       supabase.from('guests').select('id'),
     ]);
 
@@ -16,9 +19,9 @@ export default async function DashboardPage() {
   const totalGuests = guests?.length ?? 0;
 
   const upcoming = (episodes ?? [])
-    .filter((ep) => ep.scheduled_recording_at)
+    .filter((ep: any) => ep.scheduled_recording_at)
     .sort(
-      (a, b) =>
+      (a: any, b: any) =>
         new Date(a.scheduled_recording_at as string).getTime() -
         new Date(b.scheduled_recording_at as string).getTime()
     )
@@ -50,7 +53,7 @@ export default async function DashboardPage() {
 
       {/* Upcoming recordings */}
       <section>
-        <h2 className="text-sm font-medium text-slate-200 mb-2">
+        <h2 className="mb-2 text-sm font-medium text-slate-200">
           Upcoming Recordings
         </h2>
         <div className="space-y-2">
