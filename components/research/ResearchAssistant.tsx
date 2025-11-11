@@ -1,197 +1,197 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PrintButton } from '@/components/PrintButton';
-import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
+import PrintButton from '@/components/PrintButton';
 
 type Mode = 'ai' | 'manual';
 
-export function ResearchAssistant() {
+export default function ResearchAssistant() {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>('ai');
-  const [topic, setTopic] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [questions, setQuestions] = useState('');
-  const [scheduledAt, setScheduledAt] = useState(''); // datetime-local string
-  const [status, setStatus] = useState<'pending' | 'booked'>('pending');
 
+  const [topic, setTopic] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [assistLevel, setAssistLevel] = useState(70);
+  const [notes, setNotes] = useState('');
+
+  const [outline, setOutline] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   async function handleGenerate() {
-    if (!topic) return;
     setIsGenerating(true);
-
     try {
-      // TODO: call your /api endpoint that uses Genkit + Google models.
-      // For now we use a stub so the flow works end-to-end.
+      const title = guestName
+        ? `Encore Dating Lab: ${guestName} on ${topic || 'modern dating'}`
+        : `Encore Dating Lab: ${topic || 'modern dating'}`;
 
-      setTitle('Ghosted After Three Great Dates');
-      setDescription(
-        'A deep dive into why modern dating leads to abrupt disappearances, and how to set healthier expectations when swiping.'
-      );
-      setQuestions(
-        [
-          'What first attracted you to this match?',
-          'When did you first feel something was off?',
-          'How did the ghosting impact your confidence?',
-          'What would you do differently next time?',
-        ].join('\n')
-      );
+      const description =
+        `A candid, TV-style conversation about ${topic || 'dating'} — ` +
+        `framed for listeners who feel like contestants trying to win at love.`;
+
+      const bullets = [
+        'Origin story & past relationships that shaped today',
+        'Biggest dating challenges right now',
+        'Red flags, green flags, and non-negotiables',
+        'One real scenario from the guest’s life to break down',
+        'On-air “experiment” or challenge for the guest',
+      ];
+
+      const text =
+        `Episode title:\n${title}\n\n` +
+        `Short description:\n${description}\n\n` +
+        `Talking points:\n` +
+        bullets.map((b, i) => `${i + 1}. ${b}`).join('\n') +
+        (notes ? `\n\nHost notes:\n${notes}` : '');
+
+      setOutline(text);
     } finally {
       setIsGenerating(false);
     }
   }
 
-  async function handleSave() {
-    if (!title) {
-      alert('Please add an episode title before saving.');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const supabase = createSupabaseBrowserClient();
-
-      const isoDate = scheduledAt ? new Date(scheduledAt).toISOString() : null;
-
-      const { error } = await supabase.from('episodes').insert({
-        title,
-        description,
-        talking_points: questions,
-        status, // 'pending' or 'booked'
-        scheduled_recording_at: isoDate,
-        // TODO later: show_id, guest_id, etc.
-      });
-
-      if (error) {
-        console.error(error);
-        alert('Failed to save episode brief.');
-        return;
-      }
-
-      alert('Episode brief saved. It will now appear on your dashboard and calendar.');
-    } finally {
-      setIsSaving(false);
-    }
+  function handleCancel() {
+    router.push('/'); // back to main dashboard
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4">
-      <Tabs value={mode} onValueChange={v => setMode(v as Mode)} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="ai">AI Assisted</TabsTrigger>
-          <TabsTrigger value="manual">Manual</TabsTrigger>
+    <div className="space-y-6">
+      <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="ai">AI Assist</TabsTrigger>
+          <TabsTrigger value="manual">Manual Prep</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="ai" className="space-y-3">
-          <label className="text-xs text-slate-400">
-            Describe the episode (dating scenario, tension, desired angle)
-          </label>
-          <Input
-            placeholder="e.g. ‘We matched on Hinge, had 3 amazing dates, then she vanished’"
-            value={topic}
-            onChange={e => setTopic(e.target.value)}
-          />
-          <Button
-            onClick={handleGenerate}
-            disabled={!topic || isGenerating}
-            className="px-3 py-1 text-sm"
-          >
-            {isGenerating ? 'Generating…' : 'Generate brief'}
-          </Button>
-        </TabsContent>
+        {/* AI MODE */}
+        <TabsContent value="ai" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Left column: inputs */}
+            <div className="space-y-3">
+              <label className="text-xs font-medium text-slate-200">
+                Topic / hook for this episode
+                <Input
+                  className="mt-1"
+                  placeholder="e.g. First-date rules in the app era"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                />
+              </label>
 
-        <TabsContent value="manual" className="space-y-3">
-          <p className="text-xs text-slate-400">
-            Skip AI and write your own brief. Perfect when you already know exactly what you want
-            to say.
-          </p>
-        </TabsContent>
-      </Tabs>
+              <label className="text-xs font-medium text-slate-200">
+                Guest name
+                <Input
+                  className="mt-1"
+                  placeholder="e.g. Taylor, 34 — recently back on the apps"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                />
+              </label>
 
-      {/* Shared fields (used by both AI + Manual) */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-xs text-slate-400">Episode title</label>
-          <Input
-            placeholder="e.g. Ghosted After Three Great Dates"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-          />
-        </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-slate-300">
+                  <span>AI Assist level</span>
+                  <span>{assistLevel}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={assistLevel}
+                  onChange={(e) => setAssistLevel(Number(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-[11px] text-slate-400">
+                  0% = mostly your notes. 100% = let the assistant fully shape
+                  the brief.
+                </p>
+              </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-xs text-slate-400">Description</label>
-          <Textarea
-            rows={3}
-            placeholder="Short description for your dashboard, calendar, and podcast apps."
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-          />
-        </div>
+              <label className="text-xs font-medium text-slate-200">
+                Host notes / must-hit beats
+                <Textarea
+                  className="mt-1 min-h-[96px]"
+                  placeholder="Specific stories, boundaries, or questions you want to cover…"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </label>
+            </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-xs text-slate-400">Key questions / beats</label>
-          <Textarea
-            rows={5}
-            placeholder="One question per line – especially good for TV-style pacing."
-            value={questions}
-            onChange={e => setQuestions(e.target.value)}
-          />
-        </div>
+            {/* Right column: preview + actions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-200">
+                  Episode brief preview
+                </span>
+                <div className="flex items-center gap-2">
+                  <PrintButton />
+                  <Button
+                    type="button"
+                    onClick={handleCancel}
+                    className="text-[11px] border border-white/20 bg-transparent px-3 py-1 text-slate-200 hover:bg-white/10"
+                  >
+                    Cancel &amp; go home
+                  </Button>
+                </div>
+              </div>
+              <Textarea
+                className="mt-1 min-h-[220px]"
+                value={outline}
+                onChange={(e) => setOutline(e.target.value)}
+                placeholder="Your episode brief will appear here after you hit Generate."
+              />
+            </div>
+          </div>
 
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Recording date &amp; time</label>
-          <Input
-            type="datetime-local"
-            value={scheduledAt}
-            onChange={e => setScheduledAt(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Status</label>
-          <div className="inline-flex gap-2 rounded-lg border border-white/10 bg-black/20 p-1">
+          <div className="flex justify-end">
             <Button
               type="button"
-              onClick={() => setStatus('pending')}
-              className={
-                'px-3 py-1 text-xs rounded-md ' +
-                (status === 'pending' ? 'bg-white/10 text-white' : 'text-slate-400')
-              }
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="text-sm px-4 py-2"
             >
-              Pending
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setStatus('booked')}
-              className={
-                'px-3 py-1 text-xs rounded-md ' +
-                (status === 'booked' ? 'bg-white/10 text-white' : 'text-slate-400')
-              }
-            >
-              Booked
+              {isGenerating ? 'Generating…' : 'Generate brief'}
             </Button>
           </div>
-        </div>
-      </div>
+        </TabsContent>
 
-      <div className="flex items-center justify-between pt-2">
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || !title}
-          className="px-3 py-1 text-sm"
-        >
-          {isSaving ? 'Saving…' : 'Save episode brief'}
-        </Button>
+        {/* MANUAL MODE */}
+        <TabsContent value="manual" className="space-y-4">
+          <p className="text-xs text-slate-300">
+            Prefer to prep like a classic TV producer? Fill everything in by
+            hand — you can still print or export later.
+          </p>
 
-        <PrintButton />
-      </div>
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-slate-200">
+              Full prep notes
+              <Textarea
+                className="mt-1 min-h-[260px]"
+                value={outline}
+                onChange={(e) => setOutline(e.target.value)}
+                placeholder="Outline your beats, questions, and segments for this guest…"
+              />
+            </label>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              onClick={handleCancel}
+              className="text-[11px] border border-white/20 bg-transparent px-3 py-1 text-slate-200 hover:bg-white/10"
+            >
+              Cancel &amp; go home
+            </Button>
+            <div className="flex items-center gap-2">
+              <PrintButton />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
