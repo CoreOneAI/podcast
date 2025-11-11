@@ -1,51 +1,58 @@
-// components/ui/card.tsx
 import * as React from 'react';
-import { cn } from '@/lib/utils';
 
-export function Card({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+// Basic props shorthand
+type DivProps = React.HTMLAttributes<HTMLDivElement>;
+type PProps = React.HTMLAttributes<HTMLParagraphElement>;
+type HProps = React.HTMLAttributes<HTMLHeadingElement>;
+
+export function Card({ className, ...props }: DivProps) {
   return (
     <div
-      className={cn(
-        'rounded-xl border border-white/10 bg-black/40 p-4 shadow-lg backdrop-blur',
-        className
-      )}
+      className={
+        'rounded-xl border border-white/10 bg-white/5 p-4 ' +
+        (className ?? '')
+      }
       {...props}
     />
   );
 }
 
-export function CardHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function CardHeader({ className, ...props }: DivProps) {
   return (
     <div
-      className={cn('mb-2 flex flex-col space-y-1', className)}
+      className={'mb-3 flex flex-col gap-1 ' + (className ?? '')}
       {...props}
     />
   );
 }
 
-export function CardTitle({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+export function CardTitle({ className, ...props }: HProps) {
   return (
     <h2
-      className={cn('text-lg font-semibold tracking-tight', className)}
+      className={'text-sm font-semibold text-slate-100 ' + (className ?? '')}
       {...props}
     />
   );
 }
 
-export function CardContent({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function CardDescription({ className, ...props }: PProps) {
   return (
-    <div className={cn('mt-2 space-y-2', className)} {...props} />
+    <p
+      className={'text-xs text-slate-400 ' + (className ?? '')}
+      {...props}
+    />
+  );
+}
+
+export function CardContent({ className, ...props }: DivProps) {
+  return <div className={className} {...props} />;
+}
+
+export function CardFooter({ className, ...props }: DivProps) {
+  return (
+    <div
+      className={'mt-3 flex items-center justify-end gap-2 ' + (className ?? '')}
+      {...props}
+    />
   );
 }
