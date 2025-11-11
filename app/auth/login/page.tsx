@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import {
   Card,
   CardHeader,
@@ -10,121 +12,111 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
+
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>(
-    'idle'
-  );
-  const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStatus('sending');
-    setError(null);
+    setErrorMessage(null);
 
-    try {
-      const supabase = createSupabaseBrowserClient();
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          // after clicking the magic link, user comes back here logged in
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setStatus('sent');
-    } catch (err: any) {
-      console.error(err);
-      setError(
-        err?.message || 'Something went wrong sending your login link.'
-      );
-      setStatus('error');
+    if (!email || !password) {
+      setErrorMessage('Email and password are required.');
+      return;
     }
-  };
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // ✅ On success, go straight to dashboard
+    router.push('/dashboard');
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
-      <Card className="w-full max-w-md border-white/10 bg-white/5">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-xl text-white">
-            Encore Podcast Portal
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Sign in to manage shows, guests, and production.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <p className="text-sm text-slate-400">
-            Studio-only access. Enter your email and we&apos;ll send you a magic
-            login link.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <label
-                htmlFor="email"
-                className="block text-xs font-medium text-slate-300"
-              >
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                required
-                placeholder="you@studio.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
-              />
-            </div>
-
-            {error && (
-              <p className="text-xs text-red-400">
-                {error}
-              </p>
-            )}
-
-            {status === 'sent' && (
-              <p className="text-xs text-emerald-400">
-                Check your email for a login link. You can close this tab after
-                you click it.
-              </p>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={status === 'sending' || !email}
+    <main className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-md border-white/10 bg-slate-900/80 backdrop-blur">
+          <CardHeader>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">
+              Encore Podcast
+            </p>
+            <CardTitle className="mt-1 text-xl">
+              Encore Podcast Portal
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Sign in to manage shows, guests, and production.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-200">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="producer@encorepodcast.com"
+                  className="bg-slate-900/80 border-white/10 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-200">
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-slate-900/80 border-white/10 text-sm"
+                />
+              </div>
+              {errorMessage && (
+                <p className="text-xs text-red-400">{errorMessage}</p>
+              )}
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? 'Signing in…' : 'Sign in'}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col items-start gap-2 text-xs text-slate-500">
+            <p>
+              Studio-only access. Contact your producer or admin if you need an account.
+            </p>
+            <Link
+              href="/"
+              className="text-amber-400 hover:text-amber-300"
             >
-              {status === 'sending'
-                ? 'Sending link…'
-                : status === 'sent'
-                ? 'Link sent'
-                : 'Send magic link'}
-            </Button>
-          </form>
-        </CardContent>
-
-        <CardFooter className="flex items-center justify-between text-xs text-slate-500">
-          <span>&copy; {new Date().getFullYear()} Encore Podcast.</span>
-          <Link
-            href="/"
-            className="text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
-          >
-            Back to portal
-          </Link>
-        </CardFooter>
-      </Card>
-    </div>
+              ← Back to portal
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+      <footer className="pb-6 pt-2 text-center text-[10px] text-slate-500">
+        © {new Date().getFullYear()} Encore Podcast.
+      </footer>
+    </main>
   );
 }
