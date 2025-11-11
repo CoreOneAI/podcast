@@ -1,74 +1,94 @@
-// components/shows/NewShowForm.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 export default function NewShowForm() {
-  const [name, setName] = useState('');
+  const [title, setTitle] = useState('');
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const supabase = createSupabaseBrowserClient();
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    setIsSaving(true);
+
     try {
-      // TODO: optional: Supabase insert for shows
-      console.log('Create show', { name, tagline, description });
+      const { error } = await supabase.from('shows').insert({
+        title,
+        tagline,
+        description,
+      });
+
+      if (error) throw error;
+
+      setSuccess('Show created!');
+      setTitle('');
+      setTagline('');
+      setDescription('');
+    } catch (err: any) {
+      setError(err.message ?? 'Failed to create show');
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-4 space-y-4 rounded-xl border border-white/10 bg-white/5 p-4"
-    >
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-200">
-          Show name
-        </label>
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+      <div>
+        <label className="text-sm text-slate-200">Show title</label>
         <Input
-          placeholder="Encore Love Lab"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="bg-slate-900/70 border-white/10 text-white"
+          className="mt-1 bg-slate-900/60 border-slate-700"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Encore: Date Night Debrief"
+          required
         />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-200">
-          Tagline
-        </label>
+      <div>
+        <label className="text-sm text-slate-200">Tagline</label>
         <Input
-          placeholder="Smart, real-talk dating show for grown folks."
+          className="mt-1 bg-slate-900/60 border-slate-700"
           value={tagline}
           onChange={(e) => setTagline(e.target.value)}
-          className="bg-slate-900/70 border-white/10 text-white"
+          placeholder="A TV-style dating show breakdown for modern singles"
         />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-200">
-          Description
-        </label>
+      <div>
+        <label className="text-sm text-slate-200">Description</label>
         <Textarea
-          placeholder="Describe the show format, vibe, and who it's for..."
+          className="mt-1 bg-slate-900/60 border-slate-700 min-h-[120px]"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="bg-slate-900/70 border-white/10 text-white min-h-[120px]"
+          placeholder="What’s the format? What kind of guests? What’s the vibe?"
         />
       </div>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving…' : 'Create show'}
-        </Button>
-      </div>
+      {error && (
+        <p className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className="text-sm text-emerald-400">
+          {success}
+        </p>
+      )}
+
+      <Button type="submit" disabled={isSaving}>
+        {isSaving ? 'Saving…' : 'Create show'}
+      </Button>
     </form>
   );
 }
