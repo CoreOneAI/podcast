@@ -68,7 +68,6 @@ export function ResearchAssistant() {
 
     setStatus('Draft generated. Review and tweak before saving.');
 
-    // tiny fake delay so the button state feels natural
     if (typeof window !== 'undefined') {
       window.setTimeout(() => setIsGenerating(false), 300);
     } else {
@@ -112,7 +111,7 @@ export function ResearchAssistant() {
   }
 
   return (
-    <section className="max-w-4xl space-y-4">
+    <section className="mx-auto max-w-4xl space-y-4">
       {/* Header row with title + actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -266,7 +265,7 @@ export function ResearchAssistant() {
               </Button>
             </div>
             {status && (
-              <p className="text-xs text-slate-400 max-w-md">{status}</p>
+              <p className="max-w-md text-xs text-slate-400">{status}</p>
             )}
           </div>
         </CardContent>
