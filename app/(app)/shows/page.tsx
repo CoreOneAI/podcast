@@ -1,64 +1,76 @@
-// app/(app)/shows/page.tsx
-import { createClient } from '@/utils/supabase/server';
-import { NewShowForm } from '@/components/shows/NewShowForm';
+import React from "react";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import NewGuestForm from "@/components/guest/NewGuestForm";
+import Link from "next/link";
 
-export default async function ShowsPage() {
-  const supabase = await createClient();
+type Guest = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone?: string | null;
+  topic?: string | null;
+};
 
-  const { data: shows, error } = await supabase
-    .from('shows')
-    .select('id, title, description, created_at')
-    .order('created_at', { ascending: false });
+export default async function GuestsPage() {
+  const supabase = createSupabaseServerClient();
 
-  if (error) {
-    console.error('Error loading shows:', error);
-  }
+  const { data: guests } = await supabase
+    .from("guests")
+    .select("id, name, email, phone, topic")
+    .order("created_at", { ascending: false });
+
+  const guestList = (guests ?? []) as Guest[];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-white">Shows</h1>
+      <header>
+        <h1 className="text-xl font-semibold text-white">Guests</h1>
+        <p className="text-sm text-slate-400">
+          Your recurring network of guests for Encore recordings.
+        </p>
+      </header>
+
+      {/* Add guest form */}
+      <NewGuestForm />
+
+      {/* Guest list */}
+      <section className="space-y-2">
+        {guestList.length === 0 ? (
           <p className="text-sm text-slate-400">
-            Manage your podcast shows for Encore.
+            No guests yet. Add a guest to start building your network.
           </p>
-        </div>
-      </div>
-
-      {/* NEW: real create-show form */}
-      <NewShowForm />
-
-      {/* Show list */}
-      <div className="space-y-3">
-        {shows && shows.length > 0 ? (
-          shows.map((show: any) => (
-            <div
-              key={show.id}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-            >
-              <h2 className="text-sm font-medium text-white">{show.title}</h2>
-
-              {show.description && (
-                <p className="mt-1 text-xs text-slate-300">
-                  {show.description}
-                </p>
-              )}
-
-              <p className="mt-1 text-[11px] text-slate-500">
-                Created{' '}
-                {show.created_at
-                  ? new Date(show.created_at as string).toLocaleString()
-                  : 'Unknown'}
-              </p>
-            </div>
-          ))
         ) : (
-          <p className="text-sm text-slate-400">
-            No shows yet. Use the form above to create your first show.
-          </p>
+          <ul className="space-y-2">
+            {guestList.map((guest) => (
+              <li
+                key={guest.id}
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+              >
+                <div>
+                  <div className="font-medium text-white">
+                    {guest.name ?? "Unnamed guest"}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {guest.email ?? "No email"}{" "}
+                    {guest.phone ? `• ${guest.phone}` : null}
+                  </div>
+                  {guest.topic && (
+                    <div className="text-xs text-emerald-300">
+                      Topic: {guest.topic}
+                    </div>
+                  )}
+                </div>
+                <Link
+                  href={`/guest/${guest.id}`}
+                  className="text-xs text-emerald-300 hover:text-emerald-200 underline"
+                >
+                  Prep sheet
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }
