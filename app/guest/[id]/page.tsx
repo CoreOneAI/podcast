@@ -1,11 +1,14 @@
+// app/guest/[id]/page.tsx
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { GuestPrepForm } from './GuestPrepForm';
 
-type PageProps = {
-  params: { id: string };
+type GuestPageProps = {
+  params: {
+    id: string;
+  };
 };
 
-export default async function GuestPage({ params }: PageProps) {
+export default async function GuestPage({ params }: GuestPageProps) {
   const supabase = await createSupabaseServerClient();
 
   const { data: guest, error } = await supabase
@@ -16,21 +19,18 @@ export default async function GuestPage({ params }: PageProps) {
 
   if (error || !guest) {
     return (
-      <div className="text-sm text-slate-400">
-        Guest not found or an error occurred.
+      <div className="p-6">
+        <h1 className="text-lg font-semibold text-white">Guest not found</h1>
+        <p className="mt-2 text-sm text-slate-400">
+          We couldn&apos;t load this guest. It may have been deleted or the link is
+          invalid.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-white">Guest prep: {guest.name}</h1>
-        <p className="text-sm text-slate-400">
-          Dating-app story prep for your host – built like a TV interview rundown.
-        </p>
-      </div>
-
+    <div className="p-6">
       <GuestPrepForm guest={guest} />
     </div>
   );
