@@ -1,135 +1,149 @@
-// app/(app)/guests/page.tsx
-import { createClient } from '@/utils/supabase/server';
-import  NewGuestForm  from '@/components/guest/NewGuestForm';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+'use client';
 
-type Guest = {
-  id: string;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-  topic: string | null;
-  bio: string | null;
-  prep_date: string | null;
-  notes: string | null;
-  avatar_url: string | null;
-};
+import { useState, FormEvent } from 'react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
-export default async function GuestsPage() {
-  const supabase = await createClient();
+export default function NewGuestForm() {
+  const [name, setName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [topic, setTopic] = useState('');
+  const [bio, setBio] = useState('');
+  const [notes, setNotes] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const { data: guests, error } = await supabase
-    .from('guests')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const supabase = createSupabaseBrowserClient();
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setIsSaving(true);
+
+    try {
+      const { error } = await supabase.from('guests').insert({
+        name,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        topic,
+        bio,
+        notes,
+        preferred_recording_at: preferredDate || null,
+      });
+
+      if (error) throw error;
+
+      setSuccess('Guest added!');
+      setName('');
+      setContactEmail('');
+      setContactPhone('');
+      setTopic('');
+      setBio('');
+      setNotes('');
+      setPreferredDate('');
+    } catch (err: any) {
+      setError(err.message ?? 'Failed to add guest');
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Page header */}
-      <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold text-white">Guests</h1>
-        <p className="text-sm text-slate-400">
-          Your recurring network of guests for Encore recordings.
-        </p>
-      </header>
-
-      {/* New guest card (host-facing prep form) */}
-      <section>
-        <NewGuestForm />
-      </section>
-
-      {/* Existing guest list */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-medium text-slate-200">
-          Guest roster
-        </h2>
-
-        {error && (
-          <p className="text-xs text-red-400">
-            There was a problem loading guests from Supabase: {error.message}
-          </p>
-        )}
-
-        {(!guests || guests.length === 0) && !error && (
-          <p className="text-xs text-slate-400">
-            No guests yet. Add a guest to start building your network.
-          </p>
-        )}
-
-        <div className="grid gap-3 md:grid-cols-2">
-          {(guests ?? []).map((guest: Guest) => {
-            const initials =
-              guest.name
-                ?.split(' ')
-                .map((p) => p[0])
-                .join('')
-                .toUpperCase() || 'G';
-
-            return (
-              <div
-                key={guest.id}
-                className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-4"
-              >
-                <Avatar className="h-10 w-10 shrink-0">
-                  {guest.avatar_url ? (
-                    <AvatarImage
-                      src={guest.avatar_url}
-                      alt={guest.name ?? 'Guest avatar'}
-                    />
-                  ) : (
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  )}
-                </Avatar>
-
-                <div className="space-y-1 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="font-medium text-white">
-                        {guest.name ?? 'Unnamed guest'}
-                      </div>
-                      {guest.topic && (
-                        <div className="text-xs text-emerald-300/80">
-                          Topic: {guest.topic}
-                        </div>
-                      )}
-                    </div>
-                    {guest.prep_date && (
-                      <div className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] text-emerald-300">
-                        Prep {new Date(guest.prep_date).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-
-                  {guest.bio && (
-                    <p className="text-xs text-slate-300 line-clamp-2">
-                      {guest.bio}
-                    </p>
-                  )}
-
-                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-400">
-                    {guest.email && (
-                      <span className="rounded-full bg-black/30 px-2 py-0.5">
-                        {guest.email}
-                      </span>
-                    )}
-                    {guest.phone && (
-                      <span className="rounded-full bg-black/30 px-2 py-0.5">
-                        {guest.phone}
-                      </span>
-                    )}
-                  </div>
-
-                  {guest.notes && (
-                    <p className="mt-1 text-[11px] text-slate-400 line-clamp-2">
-                      Notes: {guest.notes}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm text-slate-200">Guest name</label>
+          <Input
+            className="mt-1 bg-slate-900/60 border-slate-700"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Taylor from Hinge Date Ep. 3"
+            required
+          />
         </div>
-      </section>
-    </div>
+        <div>
+          <label className="text-sm text-slate-200">Topic / angle</label>
+          <Input
+            className="mt-1 bg-slate-900/60 border-slate-700"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="First dates & red flags"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm text-slate-200">Contact email</label>
+          <Input
+            type="email"
+            className="mt-1 bg-slate-900/60 border-slate-700"
+            value={contactEmail}
+            onChange={(e) => setContactEmail(e.target.value)}
+            placeholder="guest@example.com"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-slate-200">Contact phone</label>
+          <Input
+            className="mt-1 bg-slate-900/60 border-slate-700"
+            value={contactPhone}
+            onChange={(e) => setContactPhone(e.target.value)}
+            placeholder="+1 (555) 123-4567"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm text-slate-200">Preferred recording date</label>
+        <Input
+          type="datetime-local"
+          className="mt-1 bg-slate-900/60 border-slate-700"
+          value={preferredDate}
+          onChange={(e) => setPreferredDate(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="text-sm text-slate-200">Short bio</label>
+        <Textarea
+          className="mt-1 bg-slate-900/60 border-slate-700 min-h-[100px]"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="Dating background, profession, on-air comfort level…"
+        />
+      </div>
+
+      <div>
+        <label className="text-sm text-slate-200">Host prep notes</label>
+        <Textarea
+          className="mt-1 bg-slate-900/60 border-slate-700 min-h-[80px]"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="What to avoid, key stories to hit, any sensitivities…"
+        />
+      </div>
+
+      {error && (
+        <p className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className="text-sm text-emerald-400">
+          {success}
+        </p>
+      )}
+
+      <Button type="submit" disabled={isSaving}>
+        {isSaving ? 'Saving…' : 'Add guest'}
+      </Button>
+    </form>
   );
 }
