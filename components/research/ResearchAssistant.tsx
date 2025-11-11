@@ -1,99 +1,184 @@
+// components/research/ResearchAssistant.tsx
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import Link from 'next/link';
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import PrintButton from '@/components/PrintButton';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@/components/ui/tabs';
 
 type Mode = 'ai' | 'manual';
 
-export default function ResearchAssistant() {
-  const router = useRouter();
+export function ResearchAssistant() {
   const [mode, setMode] = useState<Mode>('ai');
-
   const [topic, setTopic] = useState('');
-  const [guestName, setGuestName] = useState('');
   const [assistLevel, setAssistLevel] = useState(70);
-  const [notes, setNotes] = useState('');
-
-  const [outline, setOutline] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [questions, setQuestions] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
-  async function handleGenerate() {
+  function handleGenerate() {
+    if (!topic.trim()) {
+      setStatus('Please enter a topic or keywords first.');
+      return;
+    }
+
     setIsGenerating(true);
-    try {
-      const title = guestName
-        ? `Encore Dating Lab: ${guestName} on ${topic || 'modern dating'}`
-        : `Encore Dating Lab: ${topic || 'modern dating'}`;
+    setStatus(null);
 
-      const description =
-        `A candid, TV-style conversation about ${topic || 'dating'} — ` +
-        `framed for listeners who feel like contestants trying to win at love.`;
+    const intensity = assistLevel / 100;
+    const base = topic.trim();
 
-      const bullets = [
-        'Origin story & past relationships that shaped today',
-        'Biggest dating challenges right now',
-        'Red flags, green flags, and non-negotiables',
-        'One real scenario from the guest’s life to break down',
-        'On-air “experiment” or challenge for the guest',
-      ];
+    const generatedTitle =
+      intensity > 0.5
+        ? `Encore Dating: ${base} – On-Air Deep Dive`
+        : base;
 
-      const text =
-        `Episode title:\n${title}\n\n` +
-        `Short description:\n${description}\n\n` +
-        `Talking points:\n` +
-        bullets.map((b, i) => `${i + 1}. ${b}`).join('\n') +
-        (notes ? `\n\nHost notes:\n${notes}` : '');
+    const generatedDescription =
+      intensity > 0.5
+        ? `A dating-app style conversation exploring ${base}, framed like a TV interview with real tension, red flags, and green lights.`
+        : `Discussion of ${base} for the Encore dating show.`;
 
-      setOutline(text);
-    } finally {
+    const generatedQuestions = [
+      'What is the core dating scenario here?',
+      'Where is the tension or conflict for the guest?',
+      'What is the “hook” that would make someone stay through an ad break?',
+      'What outcome or lesson should the audience walk away with?',
+    ].join('\n• ');
+
+    setTitle(generatedTitle);
+    setDescription(generatedDescription);
+    setQuestions(`• ${generatedQuestions}`);
+
+    setStatus('Draft generated. Review and tweak before saving.');
+
+    // tiny fake delay so the button state feels natural
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => setIsGenerating(false), 300);
+    } else {
       setIsGenerating(false);
     }
   }
 
-  function handleCancel() {
-    router.push('/'); // back to main dashboard
+  function handleSaveLocal() {
+    const payload = {
+      mode,
+      topic,
+      assistLevel,
+      title,
+      description,
+      questions,
+      savedAt: new Date().toISOString(),
+    };
+
+    if (typeof window === 'undefined') {
+      setStatus('Local save only works in the browser.');
+      return;
+    }
+
+    try {
+      const existing = window.localStorage.getItem('encore-briefs');
+      const parsed = existing ? JSON.parse(existing) : [];
+      parsed.push(payload);
+      window.localStorage.setItem('encore-briefs', JSON.stringify(parsed));
+      setStatus(
+        'Saved locally in this browser. In a future version this will also update the dashboard and calendar.',
+      );
+    } catch {
+      setStatus('Could not save locally (storage error).');
+    }
+  }
+
+  function handlePrint() {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="ai">AI Assist</TabsTrigger>
-          <TabsTrigger value="manual">Manual Prep</TabsTrigger>
-        </TabsList>
+    <section className="max-w-4xl space-y-4">
+      {/* Header row with title + actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">
+            AI Research Assistant
+          </h1>
+          <p className="text-sm text-slate-400">
+            Plan dating-app episodes with AI or manually, then save or print a
+            clean brief for your host and guests.
+          </p>
+        </div>
 
-        {/* AI MODE */}
-        <TabsContent value="ai" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Left column: inputs */}
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-slate-200">
-                Topic / hook for this episode
-                <Input
-                  className="mt-1"
-                  placeholder="e.g. First-date rules in the app era"
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-100 hover:bg-white/10"
+          >
+            Print / Save as PDF
+          </button>
+          <Link
+            href="/"
+            className="rounded-lg border border-transparent bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-50 hover:bg-slate-600"
+          >
+            Cancel &amp; go home
+          </Link>
+        </div>
+      </div>
+
+      <Card className="border-white/10 bg-white/5">
+        <CardHeader>
+          <CardTitle>Episode brief</CardTitle>
+          <CardDescription>
+            Use AI Assist for structure, or switch to Manual mode if you already
+            know the beats. Perfect for TV-style interview prep.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Mode toggle + AI controls */}
+          <Tabs
+            value={mode}
+            onValueChange={(v) => setMode(v as Mode)}
+          >
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="ai">AI Assist</TabsTrigger>
+              <TabsTrigger value="manual">Manual</TabsTrigger>
+            </TabsList>
+
+            {/* AI mode */}
+            <TabsContent value="ai" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-200">
+                  Describe the episode (dating scenario, tension, desired angle)
+                </label>
+                <Textarea
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
+                  rows={4}
+                  placeholder="Example: Two people matched on a dating app but one has a secret they haven’t revealed yet…"
                 />
-              </label>
-
-              <label className="text-xs font-medium text-slate-200">
-                Guest name
-                <Input
-                  className="mt-1"
-                  placeholder="e.g. Taylor, 34 — recently back on the apps"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                />
-              </label>
+              </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs text-slate-300">
-                  <span>AI Assist level</span>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>AI Assist Level</span>
                   <span>{assistLevel}%</span>
                 </div>
                 <input
@@ -101,97 +186,91 @@ export default function ResearchAssistant() {
                   min={0}
                   max={100}
                   value={assistLevel}
-                  onChange={(e) => setAssistLevel(Number(e.target.value))}
+                  onChange={(e) =>
+                    setAssistLevel(Number(e.target.value) || 0)
+                  }
                   className="w-full"
                 />
-                <p className="text-[11px] text-slate-400">
-                  0% = mostly your notes. 100% = let the assistant fully shape
-                  the brief.
+                <p className="text-[11px] text-slate-500">
+                  0% = mostly manual. 100% = let the assistant strongly shape
+                  the title, description, and beats.
                 </p>
               </div>
 
-              <label className="text-xs font-medium text-slate-200">
-                Host notes / must-hit beats
-                <Textarea
-                  className="mt-1 min-h-[96px]"
-                  placeholder="Specific stories, boundaries, or questions you want to cover…"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+              <Button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? 'Generating…' : 'Generate brief'}
+              </Button>
+            </TabsContent>
+
+            {/* Manual mode helper copy */}
+            <TabsContent value="manual" className="pt-4">
+              <p className="text-xs text-slate-400">
+                Manual mode leaves the structure completely to you. Use this
+                when the showrunner already has a clear outline.
+              </p>
+            </TabsContent>
+          </Tabs>
+
+          {/* Brief fields – shared by AI + Manual */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-200">
+                  Episode title
+                </label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: The Secret Match: When Your Profile Isn’t the Whole Story"
                 />
-              </label>
-            </div>
-
-            {/* Right column: preview + actions */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-200">
-                  Episode brief preview
-                </span>
-                <div className="flex items-center gap-2">
-                  <PrintButton />
-                  <Button
-                    type="button"
-                    onClick={handleCancel}
-                    className="text-[11px] border border-white/20 bg-transparent px-3 py-1 text-slate-200 hover:bg-white/10"
-                  >
-                    Cancel &amp; go home
-                  </Button>
-                </div>
               </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-200">
+                  Description (for run-of-show & platforms)
+                </label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={5}
+                  placeholder="Short description of what happens in the segment and why it matters to the audience."
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-200">
+                Key questions / beats
+              </label>
               <Textarea
-                className="mt-1 min-h-[220px]"
-                value={outline}
-                onChange={(e) => setOutline(e.target.value)}
-                placeholder="Your episode brief will appear here after you hit Generate."
+                value={questions}
+                onChange={(e) => setQuestions(e.target.value)}
+                rows={10}
+                placeholder={`• Opening question\n• Where does the tension show up?\n• What’s the turning point?\n• How do we land the ending?`}
               />
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="text-sm px-4 py-2"
-            >
-              {isGenerating ? 'Generating…' : 'Generate brief'}
-            </Button>
-          </div>
-        </TabsContent>
-
-        {/* MANUAL MODE */}
-        <TabsContent value="manual" className="space-y-4">
-          <p className="text-xs text-slate-300">
-            Prefer to prep like a classic TV producer? Fill everything in by
-            hand — you can still print or export later.
-          </p>
-
-          <div className="space-y-3">
-            <label className="text-xs font-medium text-slate-200">
-              Full prep notes
-              <Textarea
-                className="mt-1 min-h-[260px]"
-                value={outline}
-                onChange={(e) => setOutline(e.target.value)}
-                placeholder="Outline your beats, questions, and segments for this guest…"
-              />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Button
-              type="button"
-              onClick={handleCancel}
-              className="text-[11px] border border-white/20 bg-transparent px-3 py-1 text-slate-200 hover:bg-white/10"
-            >
-              Cancel &amp; go home
-            </Button>
-            <div className="flex items-center gap-2">
-              <PrintButton />
+          {/* Actions + status */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={handleSaveLocal}
+              >
+                Save brief (local)
+              </Button>
             </div>
+            {status && (
+              <p className="text-xs text-slate-400 max-w-md">{status}</p>
+            )}
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </CardContent>
+      </Card>
+    </section>
   );
 }
