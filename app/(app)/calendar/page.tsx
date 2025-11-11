@@ -1,140 +1,174 @@
 // app/(app)/calendar/page.tsx
+
 import { createClient } from '@/utils/supabase/server';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
 
-type Episode = any; // keep types loose to avoid TS fights
-
-function groupByDate(episodes: Episode[]) {
-  const map = new Map<string, Episode[]>();
-
-  for (const ep of episodes) {
-    const raw =
-      ep.scheduled_recording_at ||
-      ep.scheduled_at ||
-      ep.recording_date ||
-      null;
-
-    if (!raw) continue;
-
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) continue;
-
-    const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
-    const list = map.get(key) ?? [];
-    list.push(ep);
-    map.set(key, list);
-  }
-
-  // Turn into a sorted array of days
-  const days = Array.from(map.entries()).map(([date, eps]) => {
-    const d = new Date(date);
-    return {
-      date,
-      label: d.toLocaleDateString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      }),
-      episodes: eps,
-    };
-  });
-
-  days.sort((a, b) => a.date.localeCompare(b.date));
-  return days;
-}
+type Episode = {
+  id: string;
+  title: string | null;
+  scheduled_recording_at: string | null;
+};
 
 export default async function CalendarPage() {
   const supabase = await createClient();
-
-  const { data, error } = await supabase
+  const { data: episodes } = await supabase
     .from('episodes')
-    .select('id, title, status, scheduled_recording_at, scheduled_at')
+    .select('id, title, scheduled_recording_at')
     .order('scheduled_recording_at', { ascending: true });
 
-  if (error) {
-    console.error('Error loading episodes for calendar:', error);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0–11
+
+  const firstOfMonth = new Date(year, month, 1);
+  const firstWeekday = firstOfMonth.getDay(); // 0=Sun..6=Sat
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Build calendar grid
+  const weeks: { day: number | null }[][] = [];
+  let currentWeek: { day: number | null }[] = [];
+
+  // leading blanks
+  for (let i = 0; i < firstWeekday; i++) {
+    currentWeek.push({ day: null });
   }
 
-  const episodes = (data ?? []) as Episode[];
-  const days = groupByDate(episodes);
+  for (let day = 1; day <= daysInMonth; day++) {
+    currentWeek.push({ day });
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+  }
+
+  if (currentWeek.length > 0) {
+    while (currentWeek.length < 7) {
+      currentWeek.push({ day: null });
+    }
+    weeks.push(currentWeek);
+  }
+
+  // Map day -> episodes on that day
+  const bookedByDay = new Map<number, Episode[]>();
+
+  (episodes ?? []).forEach((ep) => {
+    if (!ep.scheduled_recording_at) return;
+    const d = new Date(ep.scheduled_recording_at);
+    if (d.getFullYear() !== year || d.getMonth() !== month) return;
+    const day = d.getDate();
+    const arr = bookedByDay.get(day) ?? [];
+    arr.push(ep);
+    bookedByDay.set(day, arr);
+  });
+
+  const monthLabel = now.toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const monthEpisodes =
+    episodes?.filter((ep) => {
+      if (!ep.scheduled_recording_at) return false;
+      const d = new Date(ep.scheduled_recording_at);
+      return d.getFullYear() === year && d.getMonth() === month;
+    }) ?? [];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-white">
+        <h1 className="text-2xl font-semibold text-white">
           Production Calendar
         </h1>
         <p className="text-sm text-slate-400">
-          See your dating-show recordings laid out by day so you and your host
-          always know what&apos;s coming up.
+          Days with booked recordings are highlighted. As you schedule episodes,
+          they’ll appear on this grid.
         </p>
       </div>
 
-      {days.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No scheduled recordings yet</CardTitle>
-            <CardDescription>
-              When you start scheduling episodes, they&apos;ll show up here by
-              date. Use your Guest prep and AI Assistant to plan sessions, then
-              add recording dates to your episodes.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {days.map((day) => (
-            <Card key={day.date}>
-              <CardHeader>
-                <CardTitle>{day.label}</CardTitle>
-                <CardDescription>
-                  {day.episodes.length} recording
-                  {day.episodes.length === 1 ? '' : 's'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {day.episodes.map((ep: Episode) => (
-                  <div
-                    key={ep.id}
-                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-medium text-slate-100">
-                        {ep.title || 'Untitled episode'}
-                      </div>
-                      {ep.status && (
-                        <span className="rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-300">
-                          {ep.status}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 text-[11px] text-slate-400">
-                      Recording time:{' '}
-                      {(() => {
-                        const raw =
-                          ep.scheduled_recording_at || ep.scheduled_at || null;
-                        if (!raw) return 'Not set';
-                        const d = new Date(raw);
-                        if (Number.isNaN(d.getTime())) return 'Not set';
-                        return d.toLocaleTimeString(undefined, {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        });
-                      })()}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-sm font-medium text-slate-100">{monthLabel}</div>
+          <div className="text-xs text-slate-500">
+            Grey squares = at least one booked recording.
+          </div>
+        </div>
+
+        {/* Weekday labels */}
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+            <div key={d} className="py-1">
+              {d}
+            </div>
           ))}
         </div>
-      )}
+
+        {/* Day cells */}
+        <div className="mt-1 grid grid-cols-7 gap-1 text-sm">
+          {weeks.map((week, i) =>
+            week.map((cell, j) => {
+              if (cell.day === null) {
+                return (
+                  <div
+                    key={`${i}-${j}`}
+                    className="h-10 rounded-lg border border-transparent"
+                  />
+                );
+              }
+
+              const day = cell.day;
+              const dayEpisodes = bookedByDay.get(day) ?? [];
+              const hasBooking = dayEpisodes.length > 0;
+
+              return (
+                <div
+                  key={`${i}-${j}`}
+                  className={`relative flex h-10 items-center justify-center rounded-lg border text-xs ${
+                    hasBooking
+                      ? 'border-white/20 bg-slate-800/70 text-slate-50'
+                      : 'border-white/5 bg-transparent text-slate-300'
+                  }`}
+                >
+                  <span>{day}</span>
+                  {hasBooking && (
+                    <span className="absolute bottom-0 right-0 mb-0.5 mr-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  )}
+                </div>
+              );
+            }),
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-medium text-slate-200">
+          This month&apos;s booked recordings
+        </h2>
+
+        {monthEpisodes.length === 0 ? (
+          <p className="text-xs text-slate-400">
+            No booked recordings yet this month. When you schedule episodes,
+            they&apos;ll show up here and on the calendar above.
+          </p>
+        ) : (
+          <ul className="space-y-1 text-xs text-slate-200">
+            {monthEpisodes.map((ep) => {
+              const d = new Date(ep.scheduled_recording_at!);
+              return (
+                <li
+                  key={ep.id}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                >
+                  <div className="font-medium">
+                    {ep.title || 'Untitled episode'}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {d.toLocaleString()}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
