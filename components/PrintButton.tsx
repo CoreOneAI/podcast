@@ -1,19 +1,20 @@
+// components/PrintButton.tsx
 'use client';
 
-import * as React from 'react';
+import { Button } from '@/components/ui/button';
 
-export function PrintButton() {
+export default function PrintButton() {
   return (
-    <button
+    <Button
       type="button"
+      className="border border-white/20 bg-transparent px-3 py-1 text-[11px] text-slate-200 hover:bg-white/10"
       onClick={() => {
         if (typeof window !== 'undefined') {
           window.print();
         }
       }}
-      className="inline-flex items-center justify-center rounded-md border border-white/20 bg-transparent px-3 py-1 text-xs font-medium text-slate-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition"
     >
       Print / Save as PDF
-    </button>
+    </Button>
   );
 }
