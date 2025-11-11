@@ -1,227 +1,275 @@
+// components/guest/NewGuestForm.tsx
 'use client';
 
-import {
-  useState,
-  FormEvent,
-  ChangeEvent,
-} from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
-import { Button } from '@/components/ui/button';
+import { createClient } from '@/utils/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 
-type GuestFormState = {
-  name: string;
-  email: string;
-  phone: string;
-  bio: string;
-  topic: string;
-  notes: string;
-  preferredDate: string; // yyyy-MM-dd or datetime-local
-  avatarFile: File | null;
-};
+type Mode = 'ai' | 'manual';
 
 export function NewGuestForm() {
   const router = useRouter();
-  const [form, setForm] = useState<GuestFormState>({
-    name: '',
-    email: '',
-    phone: '',
-    bio: '',
-    topic: '',
-    notes: '',
-    preferredDate: '',
-    avatarFile: null,
-  });
+  const [mode, setMode] = useState<Mode>('ai');
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
+  const [topic, setTopic] = useState('');
+  const [prepDate, setPrepDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   const [isSaving, setIsSaving] = useState(false);
-
-  function update<K extends keyof GuestFormState>(
-    key: K,
-    value: GuestFormState[K],
-  ) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null;
-    update('avatarFile', file);
-  }
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) {
-      alert('Guest name is required.');
-      return;
-    }
-
     setIsSaving(true);
+    setError(null);
+
     try {
-      const supabase = createSupabaseBrowserClient();
+      const supabase = createClient();
+
       let avatarUrl: string | null = null;
 
-      if (form.avatarFile) {
-        const file = form.avatarFile;
-        const ext = file.name.split('.').pop() || 'jpg';
-        const path = `guest-${Date.now()}.${ext}`;
+      if (avatarFile) {
+        const ext = avatarFile.name.split('.').pop() ?? 'jpg';
+        const fileName = `${crypto.randomUUID()}.${ext}`;
+        const filePath = `guests/${fileName}`;
 
-        const { data: uploadData, error: uploadError } =
-          await supabase.storage.from('guest-avatars').upload(path, file);
+        const { error: uploadError } = await supabase.storage
+          .from('guest-avatars')
+          .upload(filePath, avatarFile);
 
         if (uploadError) {
           console.error(uploadError);
-          alert('Avatar upload failed, but the guest will still be saved.');
-        } else if (uploadData) {
-          const { data } = supabase.storage
-            .from('guest-avatars')
-            .getPublicUrl(uploadData.path);
-          avatarUrl = data.publicUrl;
+          setError('Could not upload guest photo.');
+          setIsSaving(false);
+          return;
         }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('guest-avatars')
+          .getPublicUrl(filePath);
+
+        avatarUrl = publicUrlData.publicUrl ?? null;
       }
 
-      const isoDate = form.preferredDate
-        ? new Date(form.preferredDate).toISOString()
-        : null;
-
-      const { error } = await supabase.from('guests').insert({
-        name: form.name.trim(),
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
-        bio: form.bio.trim() || null,
-        topic: form.topic.trim() || null,
-        notes: form.notes.trim() || null,
-        first_appearance_at: isoDate,
+      const { error: insertError } = await supabase.from('guests').insert({
+        name,
+        email,
+        phone,
+        bio,
+        topic,
+        prep_date: prepDate || null,
+        notes,
         avatar_url: avatarUrl,
       });
 
-      if (error) {
-        console.error(error);
-        alert('Could not save guest.');
+      if (insertError) {
+        console.error(insertError);
+        setError(insertError.message ?? 'Unable to save guest.');
+        setIsSaving(false);
         return;
       }
 
-      // Reset form
-      setForm({
-        name: '',
-        email: '',
-        phone: '',
-        bio: '',
-        topic: '',
-        notes: '',
-        preferredDate: '',
-        avatarFile: null,
-      });
+      // Clear form
+      setName('');
+      setEmail('');
+      setPhone('');
+      setBio('');
+      setTopic('');
+      setPrepDate('');
+      setNotes('');
+      setAvatarFile(null);
 
+      // Refresh server-rendered guests list
       router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong saving the guest.');
     } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4"
-    >
-      <div className="flex items-center justify-between">
+    <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 via-slate-900/60 to-slate-900/80 p-5 shadow-lg shadow-emerald-900/20">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-sm font-medium text-white">Add guest</h2>
-          <p className="text-xs text-slate-400">
-            Think of this like a TV interview prep card.
+          <h2 className="text-sm font-semibold text-white">
+            New guest prep
+          </h2>
+          <p className="text-xs text-slate-300">
+            Capture everything your host needs to walk into a TV-style
+            dating interview fully prepared.
           </p>
         </div>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Name</label>
-          <Input
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
-            placeholder="Taylor, the guest"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Email</label>
-          <Input
-            type="email"
-            value={form.email}
-            onChange={(e) => update('email', e.target.value)}
-            placeholder="guest@example.com"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Phone</label>
-          <Input
-            value={form.phone}
-            onChange={(e) => update('phone', e.target.value)}
-            placeholder="+1 (555) 123-4567"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">
-            Preferred recording date
-          </label>
-          <Input
-            type="date"
-            value={form.preferredDate}
-            onChange={(e) => update('preferredDate', e.target.value)}
-          />
+        {/* Simple mode toggle: AI vs Manual */}
+        <div className="flex items-center gap-1 rounded-full bg-black/40 p-1 text-[11px] text-slate-200">
+          <button
+            type="button"
+            onClick={() => setMode('ai')}
+            className={`rounded-full px-2 py-1 ${
+              mode === 'ai'
+                ? 'bg-emerald-500 text-black'
+                : 'bg-transparent text-slate-300'
+            }`}
+          >
+            AI assist
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('manual')}
+            className={`rounded-full px-2 py-1 ${
+              mode === 'manual'
+                ? 'bg-emerald-500 text-black'
+                : 'bg-transparent text-slate-300'
+            }`}
+          >
+            Manual
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Bio</label>
-          <Textarea
-            rows={3}
-            value={form.bio}
-            onChange={(e) => update('bio', e.target.value)}
-            placeholder="Short TV-style intro you’d read on air."
-          />
+      <form
+        onSubmit={handleSubmit}
+        className="mt-4 grid gap-3 md:grid-cols-2"
+      >
+        {/* Left column: identity + contacts */}
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-200">Guest name</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Dr. Maya Ortiz"
+              className="mt-1 bg-black/40 text-sm text-white"
+              required
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="text-xs text-slate-200">Email</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="guest@example.com"
+                className="mt-1 bg-black/40 text-sm text-white"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-200">Phone</label>
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 (555) 000-0000"
+                className="mt-1 bg-black/40 text-sm text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-200">
+              Headshot / avatar
+            </label>
+            <Input
+              type="file"
+              accept="image/*"
+              className="mt-1 bg-black/40 text-sm text-white"
+              onChange={(e) =>
+                setAvatarFile(e.target.files?.[0] ?? null)
+              }
+            />
+            <p className="mt-1 text-[10px] text-slate-400">
+              Stored in Supabase Storage (bucket: <code>guest-avatars</code>).
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs text-slate-400">Topic / angle</label>
-          <Textarea
-            rows={3}
-            value={form.topic}
-            onChange={(e) => update('topic', e.target.value)}
-            placeholder="Dating-app angle, tension, or story hook for this guest."
-          />
+        {/* Right column: TV-style prep */}
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-200">
+              Segment focus / topic
+            </label>
+            <Input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g. First-date red flags on apps"
+              className="mt-1 bg-black/40 text-sm text-white"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-200">
+              Bio highlight (short)
+            </label>
+            <Textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="One-paragraph intro your host can read on air."
+              className="mt-1 h-20 bg-black/40 text-xs text-slate-100"
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="text-xs text-slate-200">
+                Recording / interview date
+              </label>
+              <Input
+                type="date"
+                value={prepDate}
+                onChange={(e) => setPrepDate(e.target.value)}
+                className="mt-1 bg-black/40 text-sm text-white"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-200">
+                Backstage notes
+              </label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Boundaries, sensitive topics, do-not-ask list, chemistry notes…"
+                className="mt-1 h-20 bg-black/40 text-xs text-slate-100"
+              />
+            </div>
+          </div>
+
+          {/* AI vs Manual explanation (you already have AI elsewhere, this is UX only for now) */}
+          <p className="text-[10px] text-slate-400">
+            <span className="font-medium text-emerald-300">AI mode:</span>{' '}
+            later we can auto-draft intros, questions, and talking
+            points for your dating-show format. For now this toggle is
+            just visual, but the saved data is the same.
+          </p>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className="bg-emerald-500 text-sm font-medium text-black hover:bg-emerald-400"
+            >
+              {isSaving ? 'Saving…' : 'Save guest'}
+            </Button>
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-400">
+              {error}
+            </p>
+          )}
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-xs text-slate-400">Notes</label>
-        <Textarea
-          rows={3}
-          value={form.notes}
-          onChange={(e) => update('notes', e.target.value)}
-          placeholder="Backstory, sensitive topics to avoid, must-hit moments."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-xs text-slate-400">Guest photo</label>
-        <Input type="file" accept="image/*" onChange={handleFileChange} />
-        <p className="text-[11px] text-slate-500">
-          Used as their avatar in the portal and prep view.
-        </p>
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={isSaving || !form.name.trim()}
-          className="px-3 py-1 text-sm"
-        >
-          {isSaving ? 'Saving guest…' : 'Save guest'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
