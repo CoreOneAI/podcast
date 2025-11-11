@@ -1,90 +1,84 @@
-'use client';
+// components/shows/NewShowForm.tsx
+"use client";
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
-export function NewShowForm() {
-  const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [tagline, setTagline] = useState('');
+export default function NewShowForm() {
+  const supabase = createSupabaseBrowserClient();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
-
     setIsSaving(true);
-    try {
-      const supabase = createSupabaseBrowserClient();
+    setMessage(null);
+    setError(null);
 
-      const { error } = await supabase.from('shows').insert({
-        title: title.trim(),
-        description: tagline.trim(),
-      });
+    const { error } = await supabase.from("shows").insert({
+      name,
+      description,
+    });
 
-      if (error) {
-        console.error(error);
-        alert('Could not create show.');
-        return;
-      }
-
-      // Reset local form
-      setTitle('');
-      setTagline('');
-
-      // Refresh the server-rendered list
-      router.refresh();
-    } finally {
-      setIsSaving(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage("Show created. Refresh to see it in the list.");
+      setName("");
+      setDescription("");
     }
+
+    setIsSaving(false);
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-medium text-white">Create a new show</h2>
-          <p className="text-xs text-slate-400">
-            This is the umbrella for all the dating-app episodes.
-          </p>
+    <section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+      <h2 className="text-sm font-medium text-slate-200">Create show</h2>
+      <p className="text-xs text-slate-400">
+        Set up a named dating show (or segment) so you can attach episodes and
+        guests.
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="space-y-1">
+          <label className="text-xs text-slate-300">Show name</label>
+          <Input
+            placeholder="Ex: Swipe Right Stories"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <label className="text-xs text-slate-400">Show title</label>
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Encore: City Love Stories"
-        />
-      </div>
+        <div className="space-y-1">
+          <label className="text-xs text-slate-300">Description</label>
+          <Textarea
+            placeholder="Quick description of the show’s vibe and angle..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+        </div>
 
-      <div className="space-y-2">
-        <label className="text-xs text-slate-400">Tagline / description</label>
-        <Textarea
-          rows={3}
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          placeholder="Live dating-app hotline breaking down real swipes, matches, and ghosting."
-        />
-      </div>
+        <div className="flex items-center justify-between gap-2">
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save show"}
+          </Button>
 
-      <div className="flex justify-end gap-2">
-        <Button
-          type="submit"
-          disabled={isSaving || !title.trim()}
-          className="px-3 py-1 text-sm"
-        >
-          {isSaving ? 'Creating…' : 'Create show'}
-        </Button>
-      </div>
-    </form>
+          {message && (
+            <span className="text-xs text-emerald-300">{message}</span>
+          )}
+          {error && (
+            <span className="text-xs text-rose-300">Error: {error}</span>
+          )}
+        </div>
+      </form>
+    </section>
   );
 }
