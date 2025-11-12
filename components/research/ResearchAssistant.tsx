@@ -1,6 +1,8 @@
+// components/research/ResearchAssistant.tsx
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -112,15 +114,23 @@ export function ResearchAssistant() {
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
-      {/* Centered heading */}
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          AI Research Assistant
-        </h1>
-        <p className="mt-2 text-sm text-slate-300">
-          Plan dating-app episodes with AI or manually. Save briefs so they can be
-          used for guest prep and scheduling.
-        </p>
+      {/* Header row with back link */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="text-left">
+          <h1 className="text-2xl font-semibold tracking-tight text-white">
+            AI Research Assistant
+          </h1>
+          <p className="mt-2 text-sm text-slate-300">
+            Plan dating-app episodes with AI or manually. Save briefs so they can be
+            used for guest prep and scheduling.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="text-xs text-slate-300 underline-offset-4 hover:underline"
+        >
+          Back to dashboard
+        </Link>
       </div>
 
       {/* Mode + slider */}
