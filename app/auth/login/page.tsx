@@ -25,14 +25,14 @@ export default function LoginPage() {
       return;
     }
     // go to dashboard (home)
-    window.location.assign('https://encorepodcast.netlify.app/dashboard');
+    window.location.assign('/');
   };
 
   const sendReset = async () => {
     setErr(null);
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://encorepodcast.netlify.app/dashboard',
+      redirectTo: 'https://encorepodcast.netlify.app/auth/set-password',
     });
     setBusy(false);
     if (error) setErr(error.message);
@@ -88,7 +88,7 @@ export default function LoginPage() {
           >
             Forgot password? Send reset link
           </button>
-          <a href="https://encorepodcast.netlify.app/dashboard" className="text-sm text-white/80 hover:text-white underline underline-offset-4">
+          <a href="/" className="text-sm text-white/80 hover:text-white underline underline-offset-4">
             Back to portal
           </a>
         </div>
