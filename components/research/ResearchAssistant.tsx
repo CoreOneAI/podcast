@@ -92,7 +92,7 @@ export default function ResearchAssistant() {
         </p>
         <div className="text-[0.7rem] text-slate-400">
           <Link
-            href="/"
+            href="https://encorepodcast.netlify.app/dashboard"
             className="underline underline-offset-4 hover:text-white hover:no-underline"
           >
             Back to dashboard
