@@ -88,7 +88,7 @@ export default function LoginPage() {
           >
             Forgot password? Send reset link
           </button>
-          <a href="/" className="text-sm text-white/80 hover:text-white underline underline-offset-4">
+          <a href="https://encorepodcast.netlify.app/dashboard" className="text-sm text-white/80 hover:text-white underline underline-offset-4">
             Back to portal
           </a>
         </div>
