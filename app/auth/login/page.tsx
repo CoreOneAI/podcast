@@ -32,7 +32,7 @@ export default function LoginPage() {
     setErr(null);
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://encorepodcast.netlify.app/auth/set-password',
+      redirectTo: 'https://encorepodcast.netlify.app/dashboard',
     });
     setBusy(false);
     if (error) setErr(error.message);
