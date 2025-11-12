@@ -24,13 +24,12 @@ export default function Home() {
       {/* Hero section */}
       <section className="max-w-4xl mx-auto px-4 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold mb-6">
-          Dating app stories,
+          Dating,
           <br />
-          <span className="text-amber-400">TV-style.</span>
+          <span className="text-amber-400"></span>
         </h1>
         <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-          A podcast exploring the wild world of modern dating through real stories, 
-          for TV-style dating formats that record as a podcast.
+          A podcast exploring the wild world of modern dating.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <Link
