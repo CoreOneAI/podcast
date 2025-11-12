@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
-const DASHBOARD_PATH = '/'; // if your dashboard ever moves, change this path
 
 type Mode = 'ai' | 'manual';
 
@@ -19,18 +18,10 @@ export default function ResearchAssistant() {
   const [assist, setAssist] = useState(70);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // **Hard redirect** so it cannot “go back to login” via history quirks.
-  function handleCancel() {
-    if (typeof window !== 'undefined') {
-      window.location.href = DASHBOARD_PATH;
-    }
-  }
-
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setIsGenerating(true);
     try {
-      // Keep generation stubbed & build-safe.
       if (!title) setTitle('Working title based on topic');
       if (!description)
         setDescription(
@@ -53,6 +44,16 @@ export default function ResearchAssistant() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      {/* Top-only navigation control */}
+      <div className="mb-6">
+        <Link
+          href="https://encorepodcast.netlify.app/dashboard"
+          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-3 py-1.5 text-sm hover:bg-white/5"
+        >
+          ← Back to Dashboard
+        </Link>
+      </div>
+
       <header className="mb-6 text-center">
         <h1 className="text-2xl font-semibold">AI Research Assistant</h1>
         <p className="mt-2 text-sm text-gray-500">
@@ -155,16 +156,8 @@ export default function ResearchAssistant() {
               />
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <Button
-                type="button"
-                onClick={handleCancel}
-                className="border border-white/10 bg-transparent px-4 py-2 text-sm hover:bg-white/5"
-              >
-                Cancel
-              </Button>
-
+            {/* Primary action only (no Cancel inside the form) */}
+            <div className="flex justify-end pt-2">
               <Button type="submit" disabled={isGenerating} className="px-4 py-2 text-sm">
                 {isGenerating ? 'Generating…' : mode === 'ai' ? 'Generate brief' : 'Save brief'}
               </Button>
