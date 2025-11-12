@@ -1,122 +1,98 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function LoginPage() {
-  const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-
-    if (!email || !password) {
-      setErrorMessage('Email and password are required.');
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    setErr(null);
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
     if (error) {
-      setErrorMessage(error.message);
-      setLoading(false);
+      setErr(error.message);
       return;
     }
+    // go to dashboard (home)
+    window.location.assign('/');
+  };
 
-    // ✅ On success, go straight to dashboard
-    router.push('/dashboard');
-  }
+  const sendReset = async () => {
+    setErr(null);
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://encorepodcast.netlify.app/auth/set-password',
+    });
+    setBusy(false);
+    if (error) setErr(error.message);
+    else alert('Password reset link sent (check your email).');
+  };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <Card className="w-full max-w-md border-white/10 bg-slate-900/80 backdrop-blur">
-          <CardHeader>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">
-              Encore Podcast
-            </p>
-            <CardTitle className="mt-1 text-xl">
-              Encore Podcast Portal
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Sign in to manage shows, guests, and production.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-200">
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="producer@encorepodcast.com"
-                  className="bg-slate-900/80 border-white/10 text-sm"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-200">
-                  Password
-                </label>
-                <Input
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-slate-900/80 border-white/10 text-sm"
-                />
-              </div>
-              {errorMessage && (
-                <p className="text-xs text-red-400">{errorMessage}</p>
-              )}
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? 'Signing in…' : 'Sign in'}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="flex flex-col items-start gap-2 text-xs text-slate-500">
-            <p>
-              Studio-only access. Contact your producer or admin if you need an account.
-            </p>
-            <Link
-              href="/"
-              className="text-amber-400 hover:text-amber-300"
-            >
-              ← Back to portal
-            </Link>
-          </CardFooter>
-        </Card>
+    <main className="min-h-screen grid place-items-center bg-black">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 text-white">
+        <h1 className="text-2xl font-semibold mb-2">Encore Podcast Portal</h1>
+        <p className="text-sm text-white/70 mb-6">
+          Sign in with email and password.
+        </p>
+        <form onSubmit={signIn} className="space-y-4">
+          <div>
+            <label className="block text-sm mb-1">Email</label>
+            <input
+              className="w-full rounded-md bg-white/10 border border-white/10 px-3 py-2 outline-none"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Password</label>
+            <input
+              className="w-full rounded-md bg-white/10 border border-white/10 px-3 py-2 outline-none"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {err && <p className="text-red-400 text-sm">{err}</p>}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-md bg-white text-black py-2 font-medium disabled:opacity-60"
+          >
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            onClick={sendReset}
+            disabled={busy || !email}
+            className="text-sm text-white/80 hover:text-white underline underline-offset-4 disabled:opacity-60"
+            type="button"
+          >
+            Forgot password? Send reset link
+          </button>
+          <a href="/" className="text-sm text-white/80 hover:text-white underline underline-offset-4">
+            Back to portal
+          </a>
+        </div>
       </div>
-      <footer className="pb-6 pt-2 text-center text-[10px] text-slate-500">
-        © {new Date().getFullYear()} Encore Podcast.
-      </footer>
     </main>
   );
 }
