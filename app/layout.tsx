@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Encore Podcast Portal',
-  description: 'Production OS for The Medford Group Inc.',
+  description: 'Production OS for Encore Podcast.',
 };
 
 export default function RootLayout({
