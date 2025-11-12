@@ -1,19 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-const DASHBOARD_PATH = '/'; // change if your dashboard route moves
+const DASHBOARD_PATH = '/'; // if your dashboard ever moves, change this path
 
 type Mode = 'ai' | 'manual';
 
 export default function ResearchAssistant() {
-  const router = useRouter();
-
   const [mode, setMode] = useState<Mode>('ai');
   const [topic, setTopic] = useState('');
   const [title, setTitle] = useState('');
@@ -22,15 +19,18 @@ export default function ResearchAssistant() {
   const [assist, setAssist] = useState(70);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // **Hard redirect** so it cannot “go back to login” via history quirks.
   function handleCancel() {
-    router.push(DASHBOARD_PATH);
+    if (typeof window !== 'undefined') {
+      window.location.href = DASHBOARD_PATH;
+    }
   }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setIsGenerating(true);
     try {
-      // Stub: keep simple & safe for Netlify build; wire to your API later if needed.
+      // Keep generation stubbed & build-safe.
       if (!title) setTitle('Working title based on topic');
       if (!description)
         setDescription(
@@ -38,9 +38,13 @@ export default function ResearchAssistant() {
         );
       if (!points)
         setPoints(
-          ['Opening hook', 'Backstory & stakes', 'Main conflict', 'Advice beats', 'Closing CTA'].join(
-            '\n'
-          )
+          [
+            'Opening hook',
+            'Backstory & stakes',
+            'Main conflict',
+            'Advice beats',
+            'Closing CTA',
+          ].join('\n')
         );
     } finally {
       setIsGenerating(false);
@@ -61,16 +65,14 @@ export default function ResearchAssistant() {
         <CardHeader className="flex flex-col gap-3 border-b border-white/5 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">Episode Brief</CardTitle>
 
-          {/* Manual / AI toggle (kept lightweight to avoid lib/type issues) */}
+          {/* Manual / AI toggle */}
           <div className="inline-flex overflow-hidden rounded-md border border-white/10">
             <button
               type="button"
               onClick={() => setMode('manual')}
               className={
                 'px-3 py-1 text-sm ' +
-                (mode === 'manual'
-                  ? 'bg-white/10'
-                  : 'bg-transparent hover:bg-white/5')
+                (mode === 'manual' ? 'bg-white/10' : 'bg-transparent hover:bg-white/5')
               }
               aria-pressed={mode === 'manual'}
             >
@@ -102,7 +104,7 @@ export default function ResearchAssistant() {
               />
             </div>
 
-            {/* Assist slider (native input for zero deps) */}
+            {/* Assist slider */}
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <label className="text-sm">AI Assist Level</label>
@@ -163,11 +165,7 @@ export default function ResearchAssistant() {
                 Cancel
               </Button>
 
-              <Button
-                type="submit"
-                disabled={isGenerating}
-                className="px-4 py-2 text-sm"
-              >
+              <Button type="submit" disabled={isGenerating} className="px-4 py-2 text-sm">
                 {isGenerating ? 'Generating…' : mode === 'ai' ? 'Generate brief' : 'Save brief'}
               </Button>
             </div>
