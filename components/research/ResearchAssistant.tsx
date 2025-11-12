@@ -3,25 +3,30 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { PrintButton } from '@/components/PrintButton';
 
 type Mode = 'ai' | 'manual';
 
-export function ResearchAssistant() {
+export default function ResearchAssistant() {
   const [mode, setMode] = useState<Mode>('ai');
+  const [aiLevel, setAiLevel] = useState(70);
+
   const [topic, setTopic] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [beats, setBeats] = useState('');
-  const [aiLevel, setAiLevel] = useState(70);
-  const [scheduledAt, setScheduledAt] = useState('');
-  const [status, setStatus] = useState<'planning' | 'booked'>('planning');
+
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleGenerate() {
@@ -47,57 +52,17 @@ export function ResearchAssistant() {
         `${assistLabel} for a dating-app conversation built around: ${topic.trim()}. ` +
           'Explore red flags, green flags, and what this guest has learned from modern dating.'
       );
+
       setBeats(
         [
-          'Open with how they use dating apps today.',
-          'Ask about the most memorable date — best or worst — and what it revealed.',
-          'Dig into their non-negotiables and hidden green flags.',
-          'Close with advice they would give to someone swiping right now.',
+          '• How they actually use dating apps right now.',
+          '• One great date and what made it work.',
+          '• One terrible date and what it revealed.',
+          '• Where they are now and what they want next.',
         ].join('\n')
       );
     } finally {
       setIsGenerating(false);
-    }
-  }
-
-  function handleSave() {
-    if (!title.trim()) {
-      setMessage('Add at least an episode title before saving.');
-      return;
-    }
-
-    setIsSaving(true);
-    setMessage(null);
-
-    try {
-      if (typeof window !== 'undefined') {
-        const key = 'encore-episode-briefs';
-        const existingRaw = window.localStorage.getItem(key);
-        const existing = existingRaw ? JSON.parse(existingRaw) : [];
-        const next = [
-          ...existing,
-          {
-            topic,
-            title,
-            description,
-            beats,
-            status,
-            scheduledAt,
-            mode,
-            savedAt: new Date().toISOString(),
-          },
-        ];
-        window.localStorage.setItem(key, JSON.stringify(next));
-      }
-
-      setMessage(
-        'Saved in this browser. Use Print to create a PDF or send to your guest.'
-      );
-    } catch (error) {
-      console.error(error);
-      setMessage('Could not save this brief locally. You can still print it.');
-    } finally {
-      setIsSaving(false);
     }
   }
 
@@ -107,10 +72,12 @@ export function ResearchAssistant() {
     'One-paragraph setup of the dating situation, the tension, and what we want the audience to feel.';
   const previewBeats =
     beats ||
-    '- How they describe their dating-app personality\n' +
-      '- One great date and what made it work\n' +
-      '- One disastrous date and what it revealed\n' +
-      '- Where they are now and what they want next';
+    [
+      '• How they describe their dating-app personality.',
+      '• One great date and what made it work.',
+      '• One disastrous date and what it revealed.',
+      '• Where they are now and what they want next.',
+    ].join('\n');
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
@@ -121,8 +88,8 @@ export function ResearchAssistant() {
             AI Research Assistant
           </h1>
           <p className="mt-2 text-sm text-slate-300">
-            Plan dating-app episodes with AI or manually. Save briefs so they can be
-            used for guest prep and scheduling.
+            Plan dating-app episodes with AI or manually. Save these notes so they
+            can be used for guest prep and scheduling.
           </p>
         </div>
         <Link
@@ -134,72 +101,73 @@ export function ResearchAssistant() {
       </div>
 
       {/* Mode + slider */}
-      <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-black/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-300">
-            Assistant mode
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Toggle between AI-assisted or fully manual planning. The slider controls
-            how strongly the assistant steers the episode.
-          </p>
-        </div>
-        <div className="flex flex-col items-stretch gap-3 sm:w-72">
-          <div className="flex items-center justify-between text-xs text-slate-300">
-            <button
-              type="button"
-              onClick={() => setMode('manual')}
-              className={`rounded-full px-3 py-1 text-xs ${
-                mode === 'manual'
-                  ? 'bg-white text-black'
-                  : 'border border-white/20 text-slate-300 hover:border-white/40'
-              }`}
-            >
-              Manual
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('ai')}
-              className={`rounded-full px-3 py-1 text-xs ${
-                mode === 'ai'
-                  ? 'bg-white text-black'
-                  : 'border border-white/20 text-slate-300 hover:border-white/40'
-              }`}
-            >
-              AI Assist
-            </button>
+      <Card className="border-white/10 bg-black/40">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-sm text-white">
+              Assistant mode &amp; intensity
+            </CardTitle>
+            <CardDescription className="text-xs text-slate-400">
+              Choose between AI-assisted planning or mostly manual. The slider
+              controls how strongly the assistant shapes your outline.
+            </CardDescription>
           </div>
-          <div className="space-y-1">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={aiLevel}
-              onChange={(e) => setAiLevel(Number(e.target.value))}
-              className="w-full"
-            />
-            <div className="flex justify-between text-[0.7rem] text-slate-400">
-              <span>0% — host-driven</span>
-              <span>{aiLevel}%</span>
-              <span>100% — AI-shaped</span>
+          <div className="flex flex-col items-stretch gap-3 sm:w-72">
+            <div className="flex items-center justify-between text-xs text-slate-300">
+              <button
+                type="button"
+                onClick={() => setMode('manual')}
+                className={`rounded-full px-3 py-1 text-xs ${
+                  mode === 'manual'
+                    ? 'bg-white text-black'
+                    : 'border border-white/20 text-slate-300 hover:border-white/40'
+                }`}
+              >
+                Manual
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('ai')}
+                className={`rounded-full px-3 py-1 text-xs ${
+                  mode === 'ai'
+                    ? 'bg-white text-black'
+                    : 'border border-white/20 text-slate-300 hover:border-white/40'
+                }`}
+              >
+                AI Assist
+              </button>
+            </div>
+            <div className="space-y-1">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={aiLevel}
+                onChange={(e) => setAiLevel(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-[0.7rem] text-slate-400">
+                <span>0% — host-driven</span>
+                <span>{aiLevel}%</span>
+                <span>100% — AI-shaped</span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
 
       {/* Main 2-column layout */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         {/* Left: inputs */}
         <Card className="border-white/10 bg-black/40">
-          <div className="border-b border-white/5 px-4 py-3">
-            <h2 className="text-sm font-medium text-white">Episode inputs</h2>
-            <p className="mt-1 text-xs text-slate-400">
+          <CardHeader>
+            <CardTitle className="text-sm text-white">Episode inputs</CardTitle>
+            <CardDescription className="text-xs text-slate-400">
               Dating scenario, tension, and the angle you want the guest to help
               explore.
-            </p>
-          </div>
-
-          <div className="space-y-4 px-4 py-4">
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-200">
                 Topic / keywords
@@ -246,54 +214,15 @@ export function ResearchAssistant() {
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-200">
-                  Tentative recording date
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(e) => setScheduledAt(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-200">
-                  Episode status
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    setStatus(e.target.value as 'planning' | 'booked')
-                  }
-                  className="h-9 w-full rounded-md border border-white/20 bg-black/60 px-2 text-xs text-slate-100"
-                >
-                  <option value="planning">Planning</option>
-                  <option value="booked">Booked</option>
-                </select>
-              </div>
-            </div>
-
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={handleGenerate}
-                  disabled={isGenerating || mode !== 'ai'}
-                  className="text-xs"
-                >
-                  {isGenerating ? 'Generating…' : 'Generate with AI'}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="text-xs"
-                >
-                  {isSaving ? 'Saving…' : 'Save brief'}
-                </Button>
-              </div>
-              <PrintButton />
+              <Button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isGenerating || mode !== 'ai'}
+                className="text-xs"
+              >
+                {isGenerating ? 'Generating…' : 'Generate with AI'}
+              </Button>
             </div>
 
             {message && (
@@ -301,19 +230,18 @@ export function ResearchAssistant() {
                 {message}
               </p>
             )}
-          </div>
+          </CardContent>
         </Card>
 
         {/* Right: preview */}
         <Card className="border-white/10 bg-black/30">
-          <div className="border-b border-white/5 px-4 py-3">
-            <h2 className="text-sm font-medium text-white">Guest-facing brief</h2>
-            <p className="mt-1 text-xs text-slate-400">
-              This is what you can email or print for your guest and producer.
-            </p>
-          </div>
-
-          <div className="space-y-3 px-4 py-4 text-sm">
+          <CardHeader>
+            <CardTitle className="text-sm text-white">Guest-facing brief</CardTitle>
+            <CardDescription className="text-xs text-slate-400">
+              This is what you can email or read from during the segment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">
                 Episode title
@@ -338,32 +266,9 @@ export function ResearchAssistant() {
                 {previewBeats}
               </pre>
             </div>
-
-            <div className="grid gap-3 border-t border-white/5 pt-3 text-[0.78rem] text-slate-300 sm:grid-cols-2">
-              <div>
-                <span className="block text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">
-                  Record status
-                </span>
-                <span className="mt-1 inline-flex rounded-full bg-white/5 px-2 py-0.5 text-[0.7rem]">
-                  {status === 'booked' ? 'Booked' : 'Planning'}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">
-                  Tentative recording time
-                </span>
-                <span className="mt-1 block">
-                  {scheduledAt
-                    ? new Date(scheduledAt).toLocaleString()
-                    : 'Not set yet'}
-                </span>
-              </div>
-            </div>
-          </div>
+          </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-
-export default ResearchAssistant;
