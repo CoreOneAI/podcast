@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Encore Podcast Portal',
+  title: 'Encore Podcast Studio',
   description: 'Production OS for Encore Podcast.',
 };
 
