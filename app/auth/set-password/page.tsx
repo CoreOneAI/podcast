@@ -102,7 +102,7 @@ export default function SetPasswordPage() {
             {error ?? 'Link invalid or expired.'}
             <div className="mt-3">
               <a
-                href="/auth/login"
+                href=""https://encorepodcast.netlify.app/dashboard""
                 className="underline decoration-white/40 underline-offset-4"
               >
                 Request a new reset link
