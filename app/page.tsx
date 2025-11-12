@@ -26,7 +26,7 @@ export default function Home() {
         <h1 className="text-5xl md:text-6xl font-bold mb-6">
           Dating,
           <br />
-          <span className="text-amber-400"></span>
+          <span className="text-amber-400">Reimagined.</span>
         </h1>
         <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
           A podcast exploring the wild world of modern dating.
