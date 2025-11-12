@@ -24,15 +24,15 @@ export default function LoginPage() {
       setErr(error.message);
       return;
     }
-    // Redirect to dashboard
-    window.location.href = 'https://encorepodcast.netlify.app/dashboard';
+    // go to dashboard (home)
+    window.location.assign('https://encorepodcast.netlify.app/dashboard');
   };
 
   const sendReset = async () => {
     setErr(null);
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://encorepodcast.netlify.app/auth/reset-password',
+      redirectTo: 'https://encorepodcast.netlify.app/dashboard',
     });
     setBusy(false);
     if (error) setErr(error.message);
