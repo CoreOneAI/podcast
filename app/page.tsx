@@ -43,7 +43,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
-                href="/auth/login"
+                href=""https://encorepodcast.netlify.app/dashboard""
                 className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm hover:bg-amber-300"
               >
                 Sign in to portal
