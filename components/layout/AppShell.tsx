@@ -54,7 +54,7 @@ export function AppShell({
         <aside className="hidden md:flex w-64 flex-col border-r border-white/10 bg-black/40 backdrop-blur-xl">
           <div className="px-5 py-4 border-b border-white/10">
             <div className="text-sm font-semibold tracking-wide text-slate-300">
-              The Medford Group Inc
+              Encore Podcast
             </div>
             <div className="text-lg font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               Encore Podcast Portal
