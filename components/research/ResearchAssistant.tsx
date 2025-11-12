@@ -58,18 +58,14 @@ export default function ResearchAssistant() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      {/* Page heading */}
-      <div>
-        <h1 className="text-2xl font-semibold text-white">
-          AI Research Assistant
-        </h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Plan dating-app episodes with AI or manually. Save and print briefs
-          so your host and guests are fully prepared.
-        </p>
-      </div>
-
+<div className="space-y-1 text-center">
+  <h1 className="text-2xl font-semibold text-white">
+    AI Research Assistant
+  </h1>
+  <p className="text-sm text-slate-400 max-w-2xl mx-auto">
+    Plan dating-app episodes with AI or manually. Save briefs so they can be used for guest prep and scheduling.
+  </p>
+</div>
       <Card className="border-white/10 bg-black/40">
         <CardHeader className="flex flex-col gap-3 border-b border-white/5 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base text-white">
