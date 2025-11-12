@@ -47,7 +47,7 @@ export default function ResearchAssistant() {
       {/* Top-only navigation control */}
       <div className="mb-6">
         <Link
-          href="https://encorepodcast.netlify.app/dashboard"
+          href="/"
           className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-transparent px-3 py-1.5 text-sm hover:bg-white/5"
         >
           ← Back to Dashboard
