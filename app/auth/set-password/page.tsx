@@ -13,6 +13,7 @@ export default function SetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
+  // Create a browser Supabase client without relying on any project utils.
   const supabase = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -22,9 +23,11 @@ export default function SetPasswordPage() {
     return createClient(url ?? '', anon ?? '');
   }, []);
 
+  // Read tokens from the URL hash and establish a session.
   useEffect(() => {
     (async () => {
       try {
+        // Example: #access_token=...&refresh_token=...&type=recovery
         const hash = typeof window !== 'undefined' ? window.location.hash : '';
         const params = new URLSearchParams(hash.replace(/^#/, ''));
         const access_token = params.get('access_token');
@@ -36,6 +39,7 @@ export default function SetPasswordPage() {
           return;
         }
 
+        // Persist the session so updateUser() will be authorized.
         const { data, error: setErr } = await supabase.auth.setSession({
           access_token,
           refresh_token,
@@ -77,10 +81,8 @@ export default function SetPasswordPage() {
     }
 
     setPhase('done');
-    // Redirect to dashboard after success
-    setTimeout(() => {
-      window.location.href = 'https://encorepodcast.netlify.app/dashboard';
-    }, 1000);
+    // Small pause so the success state is visible, then go to dashboard.
+    setTimeout(() => router.replace('https://encorepodcast.netlify.app/dashboard'), 300);
   }
 
   return (
@@ -168,7 +170,7 @@ export default function SetPasswordPage() {
 
         {phase === 'done' && (
           <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
-            Password updated successfully! Redirecting to dashboard...
+            Password updated. Redirecting…
           </div>
         )}
       </div>
