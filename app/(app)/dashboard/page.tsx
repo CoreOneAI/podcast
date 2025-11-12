@@ -1,133 +1,45 @@
-'use client';
+// app/dashboard/page.tsx
+import { redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = 'https://encorepodcast.netlify.app/login';
-  };
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg">Loading...</div>
-        </div>
-      </main>
-    );
-  }
+export default async function DashboardPage() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg mb-4">Not authenticated</div>
-          <a 
-            href="https://encorepodcast.netlify.app/login" 
-            className="bg-white text-black px-4 py-2 rounded-md"
-          >
-            Go to Login
-          </a>
-        </div>
-      </main>
-    );
+    redirect('/');
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Encore Podcast Dashboard</h1>
-            <p className="text-white/70">Welcome back, {user.email}</p>
-          </div>
-          <button
-            onClick={signOut}
-            className="bg-white/10 hover:bg-white/20 border border-white/10 px-4 py-2 rounded-md"
-          >
-            Sign Out
-          </button>
+    <main className="min-h-screen bg-gradient-to-b from-black to-zinc-900 text-white">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <header className="mb-8 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Encore Podcast Studio</h1>
+          {/* simple sign out link if you want it later:
+            <form action={signOut} className="inline">
+              <button className="text-sm text-white/70 hover:text-white">Sign out</button>
+            </form>
+          */}
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Research Assistant Card */}
-          <Link 
-            href="/research" 
-            className="block border border-white/10 bg-white/5 rounded-xl p-6 hover:bg-white/10 transition-colors"
-          >
-            <h2 className="text-xl font-semibold mb-2">AI Research Assistant</h2>
-            <p className="text-white/70 text-sm">
-              Plan dating-app episodes with AI or manually. Save briefs for guest prep and scheduling.
-            </p>
-          </Link>
-
-          {/* Episode Manager Card */}
-          <div className="border border-white/10 bg-white/5 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-2">Episode Manager</h2>
-            <p className="text-white/70 text-sm">
-              Manage your podcast episodes, track progress, and monitor performance.
-            </p>
-          </div>
-
-          {/* Guest Management Card */}
-          <div className="border border-white/10 bg-white/5 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-2">Guest Management</h2>
-            <p className="text-white/70 text-sm">
-              Coordinate with guests, send reminders, and prepare interview briefs.
-            </p>
-          </div>
-
-          {/* Analytics Card */}
-          <div className="border border-white/10 bg-white/5 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-2">Analytics</h2>
-            <p className="text-white/70 text-sm">
-              Track listener growth, engagement metrics, and episode performance.
-            </p>
-          </div>
-
-          {/* Sponsorship Card */}
-          <div className="border border-white/10 bg-white/5 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-2">Sponsorship</h2>
-            <p className="text-white/70 text-sm">
-              Manage sponsor relationships, track campaigns, and generate reports.
-            </p>
-          </div>
-
-          {/* Settings Card */}
-          <div className="border border-white/10 bg-white/5 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-2">Settings</h2>
-            <p className="text-white/70 text-sm">
-              Configure your podcast settings, team members, and integrations.
-            </p>
-          </div>
+        {/* Your existing dashboard sections/links can live here */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <a href="/shows" className="block rounded-xl border border-white/10 p-5 hover:bg-white/5">
+            <h2 className="font-medium">Shows</h2>
+            <p className="text-sm text-white/60">Manage overall formats and planning.</p>
+          </a>
+          <a href="/guest" className="block rounded-xl border border-white/10 p-5 hover:bg-white/5">
+            <h2 className="font-medium">Guests</h2>
+            <p className="text-sm text-white/60">Build your recurring guest roster.</p>
+          </a>
+          <a href="/research" className="block rounded-xl border border-white/10 p-5 hover:bg-white/5">
+            <h2 className="font-medium">AI Research Assistant</h2>
+            <p className="text-sm text-white/60">Plan episodes with AI or manually.</p>
+          </a>
+          <a href="/board" className="block rounded-xl border border-white/10 p-5 hover:bg-white/5">
+            <h2 className="font-medium">Production Board</h2>
+            <p className="text-sm text-white/60">Pipeline view from Planning → Published.</p>
+          </a>
         </div>
       </div>
     </main>
