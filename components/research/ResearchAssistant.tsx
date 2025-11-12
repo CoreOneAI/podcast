@@ -80,29 +80,29 @@ export default function ResearchAssistant() {
     ].join('\n');
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
-      {/* Header row with back link */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="text-left">
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
-            AI Research Assistant
-          </h1>
-          <p className="mt-2 text-sm text-slate-300">
-            Plan dating-app episodes with AI or manually. Save these notes so they
-            can be used for guest prep and scheduling.
-          </p>
+    <div className="w-full max-w-5xl mx-auto space-y-8">
+      {/* Page header (centered) */}
+      <header className="text-center space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">
+          AI Research Assistant
+        </h1>
+        <p className="text-sm text-slate-300 max-w-2xl mx-auto">
+          Plan dating-app episodes with AI or manually. Save briefs so they can
+          be used for guest prep and scheduling.
+        </p>
+        <div className="text-[0.7rem] text-slate-400">
+          <Link
+            href="/"
+            className="underline underline-offset-4 hover:text-white hover:no-underline"
+          >
+            Back to dashboard
+          </Link>
         </div>
-        <Link
-          href="/"
-          className="text-xs text-slate-300 underline-offset-4 hover:underline"
-        >
-          Back to dashboard
-        </Link>
-      </div>
+      </header>
 
-      {/* Mode + slider */}
+      {/* Mode / slider card */}
       <Card className="border-white/10 bg-black/40">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-sm text-white">
               Assistant mode &amp; intensity
@@ -112,7 +112,9 @@ export default function ResearchAssistant() {
               controls how strongly the assistant shapes your outline.
             </CardDescription>
           </div>
+
           <div className="flex flex-col items-stretch gap-3 sm:w-72">
+            {/* Manual / AI toggle */}
             <div className="flex items-center justify-between text-xs text-slate-300">
               <button
                 type="button"
@@ -137,6 +139,8 @@ export default function ResearchAssistant() {
                 AI Assist
               </button>
             </div>
+
+            {/* Slider */}
             <div className="space-y-1">
               <input
                 type="range"
@@ -156,9 +160,9 @@ export default function ResearchAssistant() {
         </CardHeader>
       </Card>
 
-      {/* Main 2-column layout */}
+      {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        {/* Left: inputs */}
+        {/* LEFT: Input form */}
         <Card className="border-white/10 bg-black/40">
           <CardHeader>
             <CardTitle className="text-sm text-white">Episode inputs</CardTitle>
@@ -167,7 +171,9 @@ export default function ResearchAssistant() {
               explore.
             </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
+            {/* Topic */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-200">
                 Topic / keywords
@@ -179,6 +185,7 @@ export default function ResearchAssistant() {
               />
             </div>
 
+            {/* Title */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-200">
                 Episode title
@@ -190,6 +197,7 @@ export default function ResearchAssistant() {
               />
             </div>
 
+            {/* Description */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-200">
                 Short description
@@ -202,6 +210,7 @@ export default function ResearchAssistant() {
               />
             </div>
 
+            {/* Beats */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-200">
                 Key questions / beats
@@ -214,6 +223,7 @@ export default function ResearchAssistant() {
               />
             </div>
 
+            {/* Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <Button
                 type="button"
@@ -233,15 +243,19 @@ export default function ResearchAssistant() {
           </CardContent>
         </Card>
 
-        {/* Right: preview */}
+        {/* RIGHT: Preview card */}
         <Card className="border-white/10 bg-black/30">
           <CardHeader>
-            <CardTitle className="text-sm text-white">Guest-facing brief</CardTitle>
+            <CardTitle className="text-sm text-white">
+              Guest-facing brief
+            </CardTitle>
             <CardDescription className="text-xs text-slate-400">
               This is what you can email or read from during the segment.
             </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-3 text-sm">
+            {/* Title preview */}
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">
                 Episode title
@@ -251,6 +265,7 @@ export default function ResearchAssistant() {
               </p>
             </div>
 
+            {/* Description preview */}
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">
                 Setup
@@ -258,6 +273,7 @@ export default function ResearchAssistant() {
               <p className="mt-1 text-sm text-slate-200">{previewDescription}</p>
             </div>
 
+            {/* Beats preview */}
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">
                 Key beats
