@@ -1,79 +1,106 @@
-// components/LoginForm.tsx
+// components/auth/LoginForm.tsx
 'use client';
 
-import * as React from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
 export default function LoginForm() {
   const router = useRouter();
-  const supabase = React.useMemo(() => createClient(), []);
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [submitting, setSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const supabase = createClient();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
+    setBusy(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
-    if (error) { setError(error.message || 'Sign in failed'); return; }
-    router.replace('/dashboard');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      router.replace('/dashboard'); // go straight to dashboard after auth
+    } catch (err: any) {
+      setError(err?.message ?? 'Unable to sign in');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onReset() {
+    setBusy(true);
+    setError(null);
+    try {
+      const redirectTo = `${window.location.origin}/auth/set-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      alert('Password reset email sent. Check your inbox.');
+    } catch (err: any) {
+      setError(err?.message ?? 'Could not send reset email');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <form onSubmit={onSubmit}
-      className="w-full max-w-md bg-black/40 border border-white/10 rounded-2xl p-6 space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-white">Encore Podcast Portal</h1>
-        <p className="text-sm text-white/70">Sign in to manage shows, guests, and production.</p>
-      </div>
-
-      {error && (
-        <div className="text-sm text-red-400 bg-red-950/40 border border-red-900/40 rounded-md p-2">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <label className="block text-sm text-white/80">Email</label>
-        <input
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="you@studio.com"
-          className="w-full rounded-md bg-black/50 border border-white/15 px-3 py-2 text-white placeholder-white/40"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm text-white/80">Password</label>
-        <input
-          type="password"
-          required
-          autoComplete="current-password"
-          placeholder="••••••••"
-          className="w-full rounded-md bg-black/50 border border-white/15 px-3 py-2 text-white placeholder-white/40"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-md border border-white/20 bg-white/5 hover:bg-white/10 text-white py-2 transition disabled:opacity-50"
-      >
-        {submitting ? 'Signing in…' : 'Sign in'}
-      </button>
-
-      <p className="text-xs text-white/50 text-center">
-        Studio-only access. Contact your producer or admin if you need an account.
+    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-black/60 p-6 shadow-xl">
+      <h1 className="mb-2 text-center text-xl font-semibold text-white">Encore Podcast Portal</h1>
+      <p className="mb-6 text-center text-sm text-zinc-300">
+        Sign in to manage shows, guests, and production.
       </p>
-    </form>
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm text-zinc-300">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-white outline-none"
+            placeholder="you@studio.com"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm text-zinc-300">Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-white outline-none"
+            placeholder="••••••••"
+          />
+        </div>
+
+        {error ? (
+          <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {error}
+          </div>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full rounded-lg bg-white/90 px-4 py-2 font-medium text-black hover:bg-white disabled:opacity-60"
+        >
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <span className="text-zinc-400">Forgot your password?</span>
+        <button
+          onClick={onReset}
+          disabled={busy || !email}
+          className="text-zinc-200 underline-offset-4 hover:underline disabled:opacity-60"
+        >
+          Send reset link
+        </button>
+      </div>
+    </div>
   );
 }
