@@ -1,4 +1,3 @@
-// components/auth/LoginForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +20,7 @@ export default function LoginForm() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      router.replace('/dashboard'); // go straight to dashboard after auth
+      router.replace('/dashboard'); // go to dashboard after auth
     } catch (err: any) {
       setError(err?.message ?? 'Unable to sign in');
     } finally {
@@ -76,11 +75,11 @@ export default function LoginForm() {
           />
         </div>
 
-        {error ? (
+        {error && (
           <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
             {error}
           </div>
-        ) : null}
+        )}
 
         <button
           type="submit"
