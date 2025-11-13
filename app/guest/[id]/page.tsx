@@ -1,6 +1,6 @@
 // app/(app)/guests/page.tsx
 import { createClient } from '@/utils/supabase/server';
-import { NewGuestForm } from '@/components/guest/NewGuestForm';
+import  NewGuestForm  from '@/components/guest/NewGuestForm';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 type Guest = {
